@@ -21,8 +21,7 @@ struct ContentView: View {
 
     @FocusState private var focusedField: Field?
 
-    private let expectedEmail = "student@syntax-institut.de"
-    private let expectedPassword = "supersecret"
+    private let networkingService = NetworkingService()
 
     var body: some View {
         VStack(spacing: 24) {
@@ -157,23 +156,18 @@ struct ContentView: View {
         validationMessage = nil
         isLoggingIn = true
 
-        // Simulates the asynchronous nature of a real network request.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            let isSuccess = email.trimmingCharacters(in: .whitespaces)
-                .caseInsensitiveCompare(expectedEmail) == .orderedSame
-                && password == expectedPassword
-
-            if isSuccess {
+        networkingService.login(
+            email: email.trimmingCharacters(in: .whitespaces),
+            password: password
+        ) { user, error in
+            if let user {
                 loginAlert = LoginAlert(
                     title: "Login successful",
-                    message: "Welcome back, \(email)!"
+                    message: "Welcome back, \(user.displayName.isEmpty ? user.email : user.displayName)!"
                 )
                 password = ""
-            } else {
-                loginAlert = LoginAlert(
-                    title: "Login failed",
-                    message: "Email or password is incorrect. Please try again."
-                )
+            } else if let error {
+                loginAlert = LoginAlert(title: error.title, message: error.message)
             }
 
             isLoggingIn = false
